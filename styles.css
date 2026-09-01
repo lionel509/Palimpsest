@@ -1,0 +1,921 @@
+/* Palimpsest — a scrolling PDF you can draw on.
+ *
+ * Layout is a column: toolbar / find / body / status, where the body is a row
+ * of rail | stage | panel. Everything that can be hidden is hidden by a class
+ * on the root, so nothing here has to know what anything else is doing.
+ */
+
+.palimpsest-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+.palimpsest-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------- toolbar -- */
+
+.palimpsest-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.is-history-open .palimpsest-toolbar {
+  display: none;
+}
+
+.palimpsest-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.palimpsest-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: var(--background-modifier-border);
+}
+
+.palimpsest-right {
+  margin-left: auto;
+}
+
+.palimpsest-tool {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.palimpsest-tool:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.palimpsest-tool.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.palimpsest-tool.is-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.palimpsest-label {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ style group -- */
+
+.palimpsest-style {
+  gap: 4px;
+  transition: opacity 120ms ease;
+}
+
+.palimpsest-style.is-dim {
+  opacity: 0.4;
+}
+
+.palimpsest-puck-button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.palimpsest-puck-button:hover {
+  background: var(--background-modifier-hover);
+}
+
+.palimpsest-puck-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--background-primary);
+  box-shadow: 0 0 0 1px var(--background-modifier-border);
+}
+
+.palimpsest-swatch {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.palimpsest-swatch.is-active {
+  border-color: var(--text-normal);
+}
+
+.palimpsest-size {
+  min-width: 3.2em;
+}
+
+/* ----------------------------------------------------------- colour puck -- */
+
+.palimpsest-puck {
+  position: fixed;
+  z-index: var(--layer-menu, 60);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s, 0 6px 24px rgba(0, 0, 0, 0.3));
+}
+
+.palimpsest-wheel {
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.palimpsest-hex {
+  width: 100px;
+  height: 26px;
+  text-align: center;
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+  border-width: 2px;
+}
+
+.palimpsest-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.palimpsest-slider-row {
+  display: grid;
+  grid-template-columns: 3.6em 1fr 3em;
+  align-items: center;
+  gap: 6px;
+}
+
+.palimpsest-slider-label,
+.palimpsest-slider-value {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.palimpsest-slider-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.palimpsest-recents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  width: 100%;
+}
+
+/* -------------------------------------------------------------- find bar -- */
+
+.palimpsest-find {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+}
+
+.is-find .palimpsest-find {
+  display: flex;
+}
+
+.palimpsest-find-icon {
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+}
+
+.palimpsest-find-input {
+  flex: 1 1 auto;
+  max-width: 320px;
+  height: 26px;
+}
+
+/* ------------------------------------------------------------------ body -- */
+
+.palimpsest-body {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* ------------------------------------------------------------------ rail -- */
+
+.palimpsest-rail {
+  display: none;
+  position: relative;
+  flex: 0 0 152px;
+  overflow-y: auto;
+  padding: 0 0 20px;
+  border-right: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.is-rail .palimpsest-rail {
+  display: block;
+}
+
+.palimpsest-rail-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 8px 12px;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.palimpsest-thumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.palimpsest-thumb {
+  position: relative;
+  cursor: pointer;
+}
+
+.palimpsest-thumb-frame {
+  width: 100%;
+  border: 2px solid transparent;
+  border-radius: 3px;
+  background: var(--background-primary);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  line-height: 0;
+}
+
+.palimpsest-thumb-frame canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.palimpsest-thumb:hover .palimpsest-thumb-frame {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.palimpsest-thumb.is-current .palimpsest-thumb-frame {
+  border-color: var(--interactive-accent);
+}
+
+.palimpsest-thumb.is-dragging {
+  opacity: 0.4;
+}
+
+.palimpsest-thumb-label {
+  margin-top: 3px;
+  text-align: center;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.palimpsest-thumb-menu {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-s);
+  background: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.palimpsest-thumb:hover .palimpsest-thumb-menu {
+  display: grid;
+}
+
+.palimpsest-drop {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: var(--interactive-accent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.palimpsest-drop.is-visible {
+  opacity: 1;
+}
+
+/* ----------------------------------------------------------------- stage -- */
+
+.palimpsest-stage {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: auto;
+  background: var(--background-secondary-alt);
+  scroll-behavior: auto;
+}
+
+.palimpsest-doc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: safe center;
+  gap: 14px;
+  padding: 14px 12px 40px;
+  min-height: 100%;
+}
+
+/* Two-up, the way a book falls open. */
+.palimpsest-doc.is-spread {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: safe center;
+  align-items: flex-start;
+}
+
+.palimpsest-page {
+  position: relative;
+  flex: 0 0 auto;
+  line-height: 0;
+  background: var(--background-primary);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.28);
+}
+
+/* Until the bitmap lands, the box is a blank sheet rather than a hole. */
+.palimpsest-page:not(.is-painted) {
+  background: #fff;
+}
+
+.palimpsest-canvas {
+  display: block;
+}
+
+.palimpsest-page-badge {
+  position: absolute;
+  user-select: none;
+  right: 6px;
+  bottom: 6px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+
+.palimpsest-page:hover .palimpsest-page-badge {
+  opacity: 1;
+}
+
+.palimpsest-overlay {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* The cursor is the honest signal of what a click will do. */
+.palimpsest-root[data-tool="select"] .palimpsest-overlay {
+  cursor: default;
+}
+
+.palimpsest-root[data-tool="select"] .palimpsest-shape {
+  cursor: move;
+}
+
+.palimpsest-root[data-tool="text"] .palimpsest-overlay {
+  cursor: text;
+}
+
+.palimpsest-root[data-tool="pan"] .palimpsest-overlay,
+.palimpsest-root.is-panning .palimpsest-overlay,
+.palimpsest-root.is-panning .palimpsest-stage {
+  cursor: grab;
+}
+
+.palimpsest-root[data-tool="eraser"] .palimpsest-overlay {
+  cursor: cell;
+}
+
+.palimpsest-root[data-tool="lasso"] .palimpsest-overlay,
+.palimpsest-root[data-tool="lasso"] .palimpsest-shape,
+.palimpsest-root[data-tool="lasso"] .palimpsest-ink {
+  cursor: crosshair;
+}
+
+/* Only ever set when there is more than one, so it takes no room the rest of
+   the time. */
+.palimpsest-count:not(:empty) {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--background-modifier-hover);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------ text layer -- */
+
+/* The PDF's own text, transparent, over the page. Laid out in points; the
+   container's transform is the zoom, so a span never has to be re-measured. */
+.palimpsest-textlayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  line-height: 1;
+  /* .palimpsest-page zeroes line-height for the canvas; the spans need it back. */
+  color: transparent;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.palimpsest-textlayer span {
+  position: absolute;
+  white-space: pre;
+  transform-origin: 0 0;
+  cursor: inherit;
+}
+
+/* Only the select tool selects text. Every other tool draws, and a layer that
+   swallowed the press would be a pen that highlights sentences. */
+.palimpsest-root[data-tool="select"] .palimpsest-textlayer {
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+/* Space-drag pans through everything, including the words. */
+.palimpsest-root.is-panning .palimpsest-textlayer {
+  pointer-events: none;
+}
+
+/* The glyphs are invisible, so this rectangle is the whole of what selecting
+   looks like — it has to read over white paper and over a dark slide alike. */
+.palimpsest-textlayer span::selection {
+  background: rgba(64, 122, 255, 0.32);
+}
+
+.palimpsest-selectionbar {
+  position: absolute;
+  z-index: 20;
+  display: none;
+  align-items: center;
+  gap: 1px;
+  padding: 3px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+.palimpsest-selectionbar.is-visible {
+  display: flex;
+}
+
+/* Reading a past version: copying is fine, writing is not. */
+.palimpsest-selectionbar:not(.is-marking) .palimpsest-sep,
+.palimpsest-selectionbar:not(.is-marking) [data-mark] {
+  display: none;
+}
+
+.palimpsest-shape {
+  /* `all`, not `visiblePainted`: the hit test selects anywhere in the box, so
+     the cursor has to promise the same thing inside an unfilled rectangle. */
+  pointer-events: all;
+}
+
+.palimpsest-highlight {
+  mix-blend-mode: multiply;
+}
+
+.palimpsest-ink {
+  pointer-events: all;
+}
+
+.palimpsest-ink.is-live {
+  pointer-events: none;
+}
+
+.palimpsest-shape.is-erasing {
+  opacity: 0.18;
+}
+
+.palimpsest-text {
+  white-space: pre;
+  user-select: none;
+}
+
+.palimpsest-text.is-editing {
+  visibility: hidden;
+}
+
+.palimpsest-ghost {
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.palimpsest-outline {
+  fill: none;
+  stroke: var(--interactive-accent);
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+/* One of several. The members are marked lightly and the frame around them
+   solidly, because the frame is the thing the handles belong to. */
+.palimpsest-outline.is-member {
+  opacity: 0.5;
+  stroke-dasharray: 2 3;
+}
+
+/* The loop as you draw it. Closed from the first move — you are picking out an
+   area, and an open curve does not say which side of itself you meant. */
+.palimpsest-lasso {
+  fill: var(--interactive-accent);
+  fill-opacity: 0.1;
+  stroke: var(--interactive-accent);
+  pointer-events: none;
+}
+
+.palimpsest-handle {
+  fill: var(--background-primary);
+  stroke: var(--interactive-accent);
+}
+
+.palimpsest-match {
+  fill: #ffd54a;
+  opacity: 0.42;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.palimpsest-match.is-active {
+  fill: #ff9d2e;
+  opacity: 0.62;
+}
+
+/* --------------------------------------------------------------- covers -- */
+
+/* A cover is a piece of paper laid on the page over an answer. It has to read
+   as *on top of* the page rather than as part of it, or the document just looks
+   like it has a yellow box printed on it — so it keeps a shaded edge, a folded
+   corner, and a shadow that scales with the zoom the way a real one would. */
+.palimpsest-cover-paper {
+  filter: drop-shadow(0 0.8px 1.2px rgba(0, 0, 0, 0.22));
+}
+
+/* The corner you lift it by. It answers to every tool, not just select, so it
+   says what it is even with the pen in hand. */
+.palimpsest-cover-peel {
+  cursor: pointer;
+}
+
+/* Lifted: the *fill* goes, the outline and the dog-ear stay.
+   Fading the whole element would be simpler and would take the cover away
+   entirely — and then you cannot see what is covered, cannot tell a lifted
+   cover from one you never placed, and cannot find the corner to put it back
+   down with. So `fill-opacity`, not `opacity`: the answer reads straight
+   through a thin coloured outline with a tab still sitting in its corner. */
+.palimpsest-cover-paper,
+.palimpsest-cover-peel {
+  transition: fill-opacity 90ms ease-out;
+}
+
+.palimpsest-cover.is-peeked .palimpsest-cover-paper {
+  fill-opacity: 0.08;
+  /* A shadow cast by a sheet that is no longer there reads as a smudge. */
+  filter: none;
+}
+
+.palimpsest-cover.is-peeked .palimpsest-cover-peel {
+  fill-opacity: 0.55;
+}
+
+/* Your working, while the answer it was hiding is showing. Faded rather than
+   hidden: the whole point of lifting a cover is to hold the two against each
+   other, and it is the printed answer that has to win the contrast. */
+.is-under-peek {
+  opacity: 0.42;
+}
+
+/* A graded cover keeps a coloured spine when it is back down, so the four you
+   got wrong are findable at a glance on a twelve-page set. */
+.palimpsest-cover-spine.is-right {
+  fill: #2da44e;
+}
+
+.palimpsest-cover-spine.is-wrong {
+  fill: #cf222e;
+}
+
+/* Tick and cross, offered only while the cover is lifted — grading an answer
+   you have not looked at is not a thing to make possible by accident. */
+.palimpsest-cover-mark {
+  cursor: pointer;
+}
+
+.palimpsest-cover-mark rect {
+  fill: #ffffff;
+  fill-opacity: 0.94;
+  stroke: rgba(31, 35, 40, 0.3);
+  /* Chrome, not drawing: it should be one hairline at every zoom. */
+  vector-effect: non-scaling-stroke;
+}
+
+.palimpsest-cover-mark path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.palimpsest-cover-mark:hover rect {
+  fill-opacity: 1;
+  stroke: rgba(31, 35, 40, 0.6);
+}
+
+/* The one you chose is filled in and the other stays an outline, so the pair
+   reads as a decision rather than as two buttons that both look pressed. */
+.palimpsest-cover-mark.is-chosen.is-right rect {
+  fill: #2da44e;
+  stroke: #1a7f37;
+}
+
+.palimpsest-cover-mark.is-chosen.is-wrong rect {
+  fill: #cf222e;
+  stroke: #a40e26;
+}
+
+/* ---------------------------------------------------------- text editing -- */
+
+.palimpsest-editor {
+  position: absolute;
+  z-index: 5;
+  min-width: 24px;
+  margin: 0;
+  padding: 0 2px;
+  border: 1px dashed var(--interactive-accent);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--background-primary) 62%, transparent);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow: hidden;
+  resize: none;
+  box-shadow: none;
+}
+
+.palimpsest-editor:focus {
+  box-shadow: none;
+  border-color: var(--interactive-accent);
+}
+
+/* -------------------------------------------------------------- status -- */
+
+.palimpsest-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border-top: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+/* How the practice is going. Absent entirely on a document with no covers on
+   it, rather than shown as a row of zeroes on every ordinary PDF. */
+.palimpsest-study {
+  display: none;
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px solid var(--background-modifier-border);
+}
+
+.palimpsest-study.is-visible {
+  display: flex;
+}
+
+.palimpsest-study-icon {
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+}
+
+.palimpsest-study-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.palimpsest-study .palimpsest-label {
+  margin: 0 2px 0 5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.palimpsest-page-input {
+  width: 3.4em;
+  height: 22px;
+  padding: 0 4px;
+  text-align: center;
+  font-size: var(--font-ui-smaller);
+  font-variant-numeric: tabular-nums;
+}
+
+.palimpsest-zoom {
+  min-width: 3.6em;
+  text-align: center;
+  cursor: pointer;
+}
+
+.palimpsest-zoom:hover {
+  color: var(--text-normal);
+}
+
+.palimpsest-select {
+  height: 24px;
+  padding: 0 20px 0 6px;
+  font-size: var(--font-ui-smaller);
+}
+
+/* ------------------------------------------------------ version history -- */
+
+.palimpsest-historybar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.is-history-open .palimpsest-historybar {
+  display: flex;
+}
+
+.palimpsest-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.palimpsest-back:hover {
+  background: var(--background-modifier-hover);
+}
+
+.palimpsest-historybar-title {
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.palimpsest-restore {
+  margin-left: auto;
+  height: 28px;
+}
+
+.palimpsest-panel {
+  display: none;
+  flex: 0 0 272px;
+  flex-direction: column;
+  overflow-y: auto;
+  border-left: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.is-history-open .palimpsest-panel {
+  display: flex;
+}
+
+.palimpsest-panel-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 8px 10px 14px;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-weight: var(--font-medium);
+}
+
+.palimpsest-versions {
+  padding: 6px 0 24px;
+}
+
+.palimpsest-version-day {
+  padding: 12px 14px 4px;
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-medium);
+  color: var(--text-muted);
+}
+
+.palimpsest-version {
+  padding: 7px 14px;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+}
+
+.palimpsest-version:hover {
+  background: var(--background-modifier-hover);
+}
+
+.palimpsest-version.is-chosen {
+  border-left-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.palimpsest-version-time {
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+}
+
+.palimpsest-version-summary {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.palimpsest-empty {
+  padding: 16px 14px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+}
+
+/* Looking at the history: the page is a record, not a canvas. */
+.is-readonly .palimpsest-overlay {
+  cursor: not-allowed;
+}
+
+.is-history .palimpsest-page {
+  outline: 2px solid var(--text-accent);
+  outline-offset: 3px;
+}
+
+.palimpsest-error {
+  margin: 40px auto;
+  max-width: 46em;
+  padding: 16px 20px;
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  color: var(--text-error);
+  line-height: 1.5;
+}

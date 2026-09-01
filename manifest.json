@@ -1,0 +1,9 @@
+{
+  "id": "palimpsest",
+  "name": "Palimpsest",
+  "version": "0.7.0",
+  "minAppVersion": "1.6.0",
+  "description": "Mark up a PDF with text, circles, lines and arrows without ever modifying the PDF. Every edit is appended to a plaintext log beside it, so the whole history stays scrubbable.",
+  "author": "Lionel Weng",
+  "isDesktopOnly": true
+}

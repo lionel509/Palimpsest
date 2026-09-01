@@ -1,0 +1,20 @@
+{
+  "name": "palimpsest",
+  "version": "0.7.0",
+  "description": "Obsidian plugin: PDF markup with a replayable edit timeline.",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "check": "tsc --noEmit",
+    "install-local": "node esbuild.config.mjs && node install.mjs",
+    "test": "esbuild src/log.ts src/note.ts src/ink.ts src/history.ts src/settings.ts src/selection.ts src/group.ts src/study.ts --bundle --format=esm --outdir=.testbuild --out-extension:.js=.mjs --log-level=warning && node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "builtin-modules": "^4.0.0",
+    "esbuild": "^0.24.0",
+    "obsidian": "^1.7.2",
+    "typescript": "^5.7.2"
+  }
+}

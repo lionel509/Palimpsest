@@ -1,0 +1,7 @@
+node_modules/
+.testbuild/
+.DS_Store
+
+# This folder doubles as a note folder in a private Obsidian vault — the project
+# note lives there, encrypted, not here.
+/*— *.md
