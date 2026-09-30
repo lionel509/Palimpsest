@@ -31,13 +31,13 @@ off disk, so a user installs by copying three files and never runs `npm install`
 Lists every ignored file the clean below would remove, keeping your secrets:
 
 ```bash
-git clean -ndX -e '!.env' -e '!.env.*'
+git clean -ndX -e '!.env' -e '!.env.*' -e '!/*— *.md'
 ```
 
 ## Clean the repo
 
 ```bash
-git clean -fdX -e '!.env' -e '!.env.*'
+git clean -fdX -e '!.env' -e '!.env.*' -e '!/*— *.md'
 ```
 
 That is everything `git clean` can see. What it **cannot** see — all outside the
