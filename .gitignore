@@ -8,3 +8,38 @@ node_modules/
 
 # graphify output — rebuilt with `graphify update .`, never versioned
 graphify-out/
+
+# --- cleanup (issue #1) -------------------------------------------------
+# Any local Python (none in this repo today) and virtualenvs
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Secrets — never committed, and deliberately KEPT by the cleanup commands
+# in CLEANUP.md (see the Secrets section there). Your marked-up PDFs and
+# .palimpsest logs live in the vault, not here.
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+secrets.json
+
+# Logs, editor and OS droppings
+*.log
+logs/
+.idea/
+.vscode/
+*.swp
+*.tsbuildinfo
+coverage/
+
+# NOTE: main.js is BUILD OUTPUT but committed on purpose — Obsidian loads it
+# off disk. Never ignore it. `npm test` writes .testbuild/ (already ignored
+# above) and nothing else.

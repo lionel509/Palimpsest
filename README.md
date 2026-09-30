@@ -222,6 +222,13 @@ npm run install-local
 
 `install-local` builds and copies into the vaults listed in `install.mjs`. Override with `OBSIDIAN_VAULT` (umbrella folder) or `OBSIDIAN_VAULTS` (colon-separated). Vanguard is deliberately absent and stays that way.
 
+## Cleanup
+
+`.gitignore` covers what this repo generates (`node_modules/`, `.testbuild/` from
+`npm test`, secrets, logs, editor droppings) — `main.js` stays tracked. See
+[CLEANUP.md](CLEANUP.md) for the preview/clean commands and the vault-side copies
+`install-local` makes; `.palimpsest` logs and companion notes are never touched.
+
 ## One known bet
 
 The plugin borrows Obsidian's own bundled pdf.js (`window.pdfjsLib`, falling back to importing it from `app://obsidian.md/lib/pdfjs/`) rather than shipping a second copy. That's an internal path and could move in a future Obsidian release. It's contained to `src/pdf.ts`, and the failure mode is a clear error message rather than damaged data.
